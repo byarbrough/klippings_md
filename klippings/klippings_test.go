@@ -13,7 +13,11 @@ func TestNewKlip(t *testing.T) {
 		"no author.txt": {Data: []byte("Invent and Wander")},
 	}
 
-	klip_files := klippings.NewKlipFromFS(fs)
+	klip_files, err := klippings.NewKlipFromFS(fs)
+
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if len(klip_files) != len(fs) {
 		t.Errorf("got %d klip files, want %d files", len(klip_files), len(fs))

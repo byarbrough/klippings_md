@@ -2,18 +2,20 @@ package klippings
 
 import (
 	"io/fs"
-	"testing/fstest"
 )
 
 type Klip struct{}
 
-func NewKlipFromFS(filesystem fstest.MapFS) []Klip {
-	dir, _ := fs.ReadDir(filesystem, ".")
+func NewKlipFromFS(filesystem fs.FS) ([]Klip, error) {
+	dir, err := fs.ReadDir(filesystem, ".")
+	if err != nil {
+		return nil, err
+	}
 
 	var klips []Klip
 	for range dir {
 		klips = append(klips, Klip{})
 	}
 
-	return klips
+	return klips, nil
 }
