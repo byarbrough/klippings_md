@@ -28,8 +28,13 @@ func TestNewKlip(t *testing.T) {
 	got := klips[0]
 	want := klippings.Klip{Page: 37}
 
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("got %v want %v", got, want)
-	}
+	assertKlip(t, got, want)
 
+}
+
+func assertKlip(t *testing.T, got klippings.Klip, want klippings.Klip) {
+	t.Helper()
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %+v want %+v", got, want)
+	}
 }
