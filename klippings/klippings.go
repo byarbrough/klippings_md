@@ -19,7 +19,7 @@ func NewKlipFromFS(filesystem fs.FS) ([]Klip, error) {
 
 	var klips []Klip
 	for _, f := range dir {
-		klip, err := getKlip(filesystem, f)
+		klip, err := getKlip(filesystem, f.Name())
 		if err != nil {
 			return klips, err // do I actually need to fail here?
 		}
@@ -29,8 +29,8 @@ func NewKlipFromFS(filesystem fs.FS) ([]Klip, error) {
 	return klips, nil
 }
 
-func getKlip(filesystem fs.FS, f fs.DirEntry) (Klip, error) {
-	klipFile, err := filesystem.Open(f.Name())
+func getKlip(filesystem fs.FS, fileName string) (Klip, error) {
+	klipFile, err := filesystem.Open(fileName)
 
 	if err != nil {
 		return Klip{}, err
@@ -39,15 +39,15 @@ func getKlip(filesystem fs.FS, f fs.DirEntry) (Klip, error) {
 	return newKlip(klipFile)
 }
 
-func newKlip(klipFile fs.File) (Klip, error) {
+func newKlip(klipFile io.Reader) (Klip, error) {
 	klipData, err := io.ReadAll(klipFile)
 	if err != nil {
 		return Klip{}, err
 	}
 
-	page_s := strings.SplitAfter(string(klipData), "- Your Highlight on page ")[1]
-	page_s = strings.Split(page_s, " |")[0]
-	page, err := strconv.Atoi(page_s)
+	pageS := strings.SplitAfter(string(klipData), "- Your Highlight on page ")[1]
+	pageS = strings.Split(pageS, " |")[0]
+	page, err := strconv.Atoi(pageS)
 	if err != nil {
 		return Klip{}, err
 	}
