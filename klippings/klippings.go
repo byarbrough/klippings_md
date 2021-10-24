@@ -1,14 +1,18 @@
 package klippings
 
 import (
+	"fmt"
 	"io"
 	"io/fs"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Klip struct {
-	Page int
+	Page     int
+	Location string
+	Time     time.Time
 }
 
 func NewKlipFromFS(filesystem fs.FS) ([]Klip, error) {
@@ -45,14 +49,24 @@ func newKlip(klipFile io.Reader) (Klip, error) {
 		return Klip{}, err
 	}
 
-	pageS := strings.SplitAfter(string(klipData), "- Your Highlight on page ")[1]
-	pageS = strings.Split(pageS, " |")[0]
+	line := strings.TrimPrefix(string(klipData), "- Your Highlight on page ")
+	pageS := strings.Split(line, " |")[0]
+	location := strings.TrimSpace(strings.Split(line, "|")[1])
+	location = strings.TrimPrefix(location, "Location ")
 	page, err := strconv.Atoi(pageS)
 	if err != nil {
 		return Klip{}, err
 	}
 
-	klip := Klip{Page: page}
+	timeS := strings.TrimSpace(strings.Split(line, "day, ")[1])
+	const dateFormat = "January 2, 2006 3:04:05 PM"
+	t, err := time.Parse(dateFormat, timeS)
+	if err != nil {
+		return Klip{}, err
+	}
+	fmt.Println(t)
+
+	klip := Klip{Page: page, Location: location, Time: t}
 
 	return klip, nil
 }

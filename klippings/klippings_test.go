@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 	"testing/fstest"
+	"time"
 
 	"github.com/byarbrough/klippings_md/klippings"
 )
@@ -25,8 +26,12 @@ func TestNewKlip(t *testing.T) {
 		t.Errorf("got %d klip files, want %d files", len(klips), len(fs))
 	}
 
+	// test fields
+	const dateFormat = "January 2, 2006 3:04:05 PM"
+	entryTime, _ := time.Parse(dateFormat, "May 16, 2021 9:23:55 PM")
+
 	got := klips[0]
-	want := klippings.Klip{Page: 37}
+	want := klippings.Klip{Page: 37, Location: "616-618", Time: entryTime}
 
 	assertKlip(t, got, want)
 
