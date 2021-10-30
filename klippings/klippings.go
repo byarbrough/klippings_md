@@ -2,6 +2,8 @@ package klippings
 
 import (
 	"bufio"
+	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"strconv"
@@ -10,9 +12,11 @@ import (
 )
 
 type Klip struct {
+	Title    string
 	Page     int
 	Location string
 	Time     time.Time
+	Body     string
 }
 
 func NewKlipFromFS(filesystem fs.FS) ([]Klip, error) {
@@ -49,36 +53,49 @@ func newKlip(klipFile io.Reader) (Klip, error) {
 
 	readLine := func() string {
 		scanner.Scan()
-		return scanner.Text()
+		return strings.TrimSpace(scanner.Text())
 	}
 
-	// titleLine := readLine()
+	klip := Klip{Title: readLine()}
 
-	klip, err := parseMetadataLine(readLine())
+	klip, err := parseMetadataLine(readLine(), klip)
 	if err != nil {
 		return Klip{}, err
+	}
+
+	readLine() // skip a line
+
+	klip.Body = readLine()
+
+	// this should be the end of the klip
+	if readLine() != "==========" {
+		return klip, errors.New("improperly formatted highlight")
 	}
 
 	return klip, nil
 }
 
-func parseMetadataLine(line string) (Klip, error) {
+// parseMetadataLine handles the second line of a highlight
+func parseMetadataLine(line string, klip Klip) (Klip, error) {
 	line = strings.TrimPrefix(line, "- Your Highlight on page ")
 	pageS := strings.Split(line, " |")[0]
 	page, err := strconv.Atoi(pageS)
 	if err != nil {
-		return Klip{}, err
+		return Klip{}, fmt.Errorf("unable to parse page number %w", err)
 	}
 
-	location := strings.TrimSpace(strings.Split(line, "|")[1])
+	location := strings.Split(line, " | ")[1]
 	location = strings.TrimPrefix(location, "Location ")
 
 	const dateFormat = "January 2, 2006 3:04:05 PM"
-	timeS := strings.TrimSpace(strings.Split(line, "day, ")[1])
+	timeS := strings.Split(line, "day, ")[1]
 	t, err := time.Parse(dateFormat, timeS)
 	if err != nil {
-		return Klip{}, err
+		return Klip{}, fmt.Errorf("unable to parse location %w", err)
 	}
 
-	return Klip{Page: page, Location: location, Time: t}, nil
+	klip.Page = page
+	klip.Location = location
+	klip.Time = t
+	return klip, nil
 }
