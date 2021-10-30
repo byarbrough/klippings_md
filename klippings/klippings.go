@@ -1,7 +1,7 @@
 package klippings
 
 import (
-	"fmt"
+	"bufio"
 	"io"
 	"io/fs"
 	"strconv"
@@ -44,29 +44,41 @@ func getKlip(filesystem fs.FS, fileName string) (Klip, error) {
 }
 
 func newKlip(klipFile io.Reader) (Klip, error) {
-	klipData, err := io.ReadAll(klipFile)
+
+	scanner := bufio.NewScanner(klipFile)
+
+	readLine := func() string {
+		scanner.Scan()
+		return scanner.Text()
+	}
+
+	// titleLine := readLine()
+
+	klip, err := parseMetadataLine(readLine())
 	if err != nil {
 		return Klip{}, err
 	}
 
-	line := strings.TrimPrefix(string(klipData), "- Your Highlight on page ")
+	return klip, nil
+}
+
+func parseMetadataLine(line string) (Klip, error) {
+	line = strings.TrimPrefix(line, "- Your Highlight on page ")
 	pageS := strings.Split(line, " |")[0]
-	location := strings.TrimSpace(strings.Split(line, "|")[1])
-	location = strings.TrimPrefix(location, "Location ")
 	page, err := strconv.Atoi(pageS)
 	if err != nil {
 		return Klip{}, err
 	}
 
-	timeS := strings.TrimSpace(strings.Split(line, "day, ")[1])
+	location := strings.TrimSpace(strings.Split(line, "|")[1])
+	location = strings.TrimPrefix(location, "Location ")
+
 	const dateFormat = "January 2, 2006 3:04:05 PM"
+	timeS := strings.TrimSpace(strings.Split(line, "day, ")[1])
 	t, err := time.Parse(dateFormat, timeS)
 	if err != nil {
 		return Klip{}, err
 	}
-	fmt.Println(t)
 
-	klip := Klip{Page: page, Location: location, Time: t}
-
-	return klip, nil
+	return Klip{Page: page, Location: location, Time: t}, nil
 }
