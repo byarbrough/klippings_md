@@ -44,10 +44,10 @@ func getKlip(filesystem fs.FS, fileName string) (Klip, error) {
 		return Klip{}, err
 	}
 	defer klipFile.Close()
-	return newKlip(klipFile)
+	return ExtractKlips(klipFile)
 }
 
-func newKlip(klipFile io.Reader) (Klip, error) {
+func ExtractKlips(klipFile io.Reader) (Klip, error) {
 
 	scanner := bufio.NewScanner(klipFile)
 
