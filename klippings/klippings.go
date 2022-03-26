@@ -19,34 +19,6 @@ type Klip struct {
 	Body     string
 }
 
-func NewKlipFromFS(filesystem fs.FS) ([]Klip, error) {
-	dir, err := fs.ReadDir(filesystem, ".")
-	if err != nil {
-		return nil, err
-	}
-
-	var klips []Klip
-	for _, f := range dir {
-		klip, err := getKlip(filesystem, f.Name())
-		if err != nil {
-			return klips, err // do I actually need to fail here?
-		}
-		klips = append(klips, klip)
-	}
-
-	return klips, nil
-}
-
-func getKlip(filesystem fs.FS, fileName string) (Klip, error) {
-	klipFile, err := filesystem.Open(fileName)
-
-	if err != nil {
-		return Klip{}, err
-	}
-	defer klipFile.Close()
-	return ExtractKlips(klipFile)
-}
-
 func ExtractKlips(klipFile io.Reader) (Klip, error) {
 
 	scanner := bufio.NewScanner(klipFile)
@@ -75,6 +47,42 @@ func ExtractKlips(klipFile io.Reader) (Klip, error) {
 	return klip, nil
 }
 
+func ParseKindleTimestamp(timestamp string) (time.Time, error) {
+	const dateFormat = "January 2, 2006 3:04:05 PM"
+
+	timeS := strings.Split(timestamp, "day, ")[1]
+	return time.Parse(dateFormat, timeS)
+
+}
+
+func NewKlipFromFS(filesystem fs.FS) ([]Klip, error) {
+	dir, err := fs.ReadDir(filesystem, ".")
+	if err != nil {
+		return nil, err
+	}
+
+	var klips []Klip
+	for _, f := range dir {
+		klip, err := getKlip(filesystem, f.Name())
+		if err != nil {
+			return klips, err // do I actually need to fail here?
+		}
+		klips = append(klips, klip)
+	}
+
+	return klips, nil
+}
+
+func getKlip(filesystem fs.FS, fileName string) (Klip, error) {
+	klipFile, err := filesystem.Open(fileName)
+
+	if err != nil {
+		return Klip{}, err
+	}
+	defer klipFile.Close()
+	return ExtractKlips(klipFile)
+}
+
 // parseMetadataLine handles the second line of a highlight
 func parseMetadataLine(line string, klip Klip) (Klip, error) {
 	line = strings.TrimPrefix(line, "- Your Highlight on page ")
@@ -87,9 +95,7 @@ func parseMetadataLine(line string, klip Klip) (Klip, error) {
 	location := strings.Split(line, " | ")[1]
 	location = strings.TrimPrefix(location, "Location ")
 
-	const dateFormat = "January 2, 2006 3:04:05 PM"
-	timeS := strings.Split(line, "day, ")[1]
-	t, err := time.Parse(dateFormat, timeS)
+	t, err := ParseKindleTimestamp(line)
 	if err != nil {
 		return Klip{}, fmt.Errorf("unable to parse location %w", err)
 	}

@@ -17,9 +17,7 @@ func TestExtracKlips(t *testing.T) {
 	We will have to make many conscious and deliberate choices, some of which will be bold and unconventional. Hopefully, some will turn out to be winners. Certainly, some will turn out to be mistakes.
 	==========`)
 
-	// TODO: make standardiztion a function
-	const dateFormat = "January 2, 2006 3:04:05 PM"
-	entryTime, _ := time.Parse(dateFormat, "May 16, 2021 9:23:55 PM")
+	entryTime, _ := klippings.ParseKindleTimestamp("Sunday, May 16, 2021 9:23:55 PM")
 
 	want := klippings.Klip{Title: "Invent and Wander", Page: 37, Location: "616-618", Time: entryTime, Body: "We will have to make many conscious and deliberate choices, some of which will be bold and unconventional. Hopefully, some will turn out to be winners. Certainly, some will turn out to be mistakes."}
 	got, err := klippings.ExtractKlips(klipfile)
@@ -29,6 +27,19 @@ func TestExtracKlips(t *testing.T) {
 
 	assertKlip(t, got, want)
 
+}
+
+func TestParseKindleTimestamp(t *testing.T) {
+	kindleTimestamp := "Thursday, July 8, 2021 8:37:42 PM"
+	got, err := klippings.ParseKindleTimestamp(kindleTimestamp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want, _ := time.Parse(time.RFC3339, "2021-07-08T20:37:42Z")
+
+	if got != want {
+		t.Errorf("got %+s want %+s", got, want)
+	}
 }
 
 // func TestNewKlip(t *testing.T) {
